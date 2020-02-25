@@ -9,57 +9,13 @@ library(geojsonio)
 
 # Setting up the client (page elements appear in order specified)
 ui <- fluidPage(
-  titlePanel("System Dynamics Modeling: The SIR Model"),
+  titlePanel("Pandemic Modeling"),
   br(),br(),
   navbarPage(
     "My Application",
-    tabPanel("Population Density", leaflet(counties) %>%
-               setView(-7.77832031,53.2734,6) %>%
-               addTiles() %>%
-               addPolygons(
-                 fillColor = ~palDen(density),
-                 weight = 2,
-                 opacity = 1,
-                 color = "white",
-                 dashArray = "3",
-                 fillOpacity = 0.7,
-                 highlight = highlightOptions(
-                   weight = 5,
-                   color = "#666",
-                   dashArray = "",
-                   fillOpacity = 0.7,
-                   bringToFront = TRUE),
-                 label = labels3,
-                 labelOptions = labelOptions(
-                   style = list("font-weight" = "normal", padding = "3px 8px"),
-                   textsize = "15px",
-                   direction = "auto")) %>%
-               addLegend(pal = palDen, values = ~density, opacity = 0.7, title = NULL,
-                         position = "bottomright")),
+    tabPanel("Population Density", mapDensity),
     
-    tabPanel("Population",leaflet(counties) %>%
-               setView(-7.77832031,53.2734,6) %>%
-               addTiles() %>%
-               addPolygons(
-                 fillColor = ~palPop(population),
-                 weight = 2,
-                 opacity = 1,
-                 color = "white",
-                 dashArray = "3",
-                 fillOpacity = 0.7,
-                 highlight = highlightOptions(
-                   weight = 5,
-                   color = "#666",
-                   dashArray = "",
-                   fillOpacity = 0.7,
-                   bringToFront = TRUE),
-                 label = labels2,
-                 labelOptions = labelOptions(
-                   style = list("font-weight" = "normal", padding = "3px 8px"),
-                   textsize = "15px",
-                   direction = "auto")) %>%
-               addLegend(pal = palPop, values = ~population, opacity = 0.7, title = NULL,
-                         position = "bottomright")),
+    tabPanel("Population", mapPop),
     tabPanel("SIR", sidebarLayout(
       sidebarPanel(
         sliderInput("cr", "Contact Rate", min=0, max=10, value=5, step=1),
@@ -87,7 +43,20 @@ ui <- fluidPage(
       )
     )),
     tabPanel("Data Explorer",
-             DT::dataTableOutput("mytable", width = "100%"))
+             DT::dataTableOutput("mytable", width = "100%")),
+    tabPanel("Dynamic Charts", titlePanel(title = h4("Infected Data", align="center")),
+             sidebarPanel(
+               
+               radioButtons("COUNTY", "Select the County",
+                            choices = c(Dublin = "InfectedD", Limerick = "InfectedL", Waterford =
+                                          "InfectedW", Cork = "InfectedC", "Galway" = "InfectedG"),
+                            selected = "InfectedD"),
+               
+               sliderInput("slider2", label = h3("Slider Range"), min = 0, 
+                           max = 161, value = c(1, 25))),
+             
+             mainPanel(
+               plotOutput("bar",height = 500)))
   ))
 
   
@@ -131,7 +100,17 @@ server <- function(input, output) {
   output$stats <- renderPrint({
     summary(data()[,c("sSusceptible","sInfected","sRecovered")])
   })
+  
+  output$bar <- renderPlot({
+    
+    reData <- subset(o2, select=c(input$COUNTY))
+    
+    barplot(reData[input$slider2[1]:input$slider2[2],1], main = input$COUNTY,
+            names.arg =o2$time[input$slider2[1]:input$slider2[2]], xlab = "Time", ylab = "Infected")
+  })
 }
 
 # Launch the app
 shinyApp(ui, server)
+
+ 
