@@ -19,27 +19,24 @@ ui <- dashboardPage(
   ## Body content
   dashboardBody(
     tabItems(
-      # First tab content
+      
+      # Dashboard
       tabItem(tabName = "dashboard",
               fluidRow(
-                valueBoxOutput("count"),
+                valueBoxOutput("sus"),
                 valueBoxOutput("users"),
-                valueBoxOutput("days")
-                
+                valueBoxOutput("rec"),
+                #valueBoxOutput("days")
               )
       ),
       
-      # Second tab content
-      tabItem(tabName = "popDen",
-              mapDensity
-      ),
       
       # Data Explorer
       tabItem(tabName = "explorer",
               DT::dataTableOutput("mytable", width = "100%")
       ),
       
-      # Data Explorer
+      # Bar Chart
       tabItem(tabName = "charts",
               sidebarPanel(
                 
@@ -85,6 +82,7 @@ ui <- dashboardPage(
               )
       ),
       
+      # Map
       tabItem(tabName = "map",
               fluidRow( column(4,actionButton("mapP", "Population"),
                                actionButton("mapD", "Pop-Density"), 
@@ -155,31 +153,29 @@ server <- function(input, output) {
             names.arg =o2$time[input$slider2[1]:input$slider2[2]], xlab = "Time", ylab = "Infected")
   })
   
-  dlCount <- 1
-  
-  # usrCount is a reactive expression that keeps an approximate
-  # count of all of the unique users that have been seen since the
-  # app started.
-  usrCount <- 1
-  
-  # Record the time that the session started.
-  startTime <- as.numeric(Sys.time())
-  
-  
-  output$count <- renderValueBox({
+  output$sus <- renderValueBox({
     valueBox(
-      value = 1,
-      subtitle = "Total downloads",
-      icon = icon("download")
+      value = 20000,
+      subtitle = "Suceptible",
+      icon = icon("user-alt")
     )
   })
   
   output$users <- renderValueBox({
     valueBox(
-      4,
+      11750,
       "Infected",
       icon = icon("users"),
       color = "green"
+    )
+  })
+  
+  output$rec <- renderValueBox({
+    valueBox(
+      11750,
+      "Recovered",
+      icon = icon("procedures"),
+      color = "orange"
     )
   })
   
