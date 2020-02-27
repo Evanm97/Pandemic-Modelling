@@ -8,8 +8,7 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
-      menuItem("Population", tabName = "popMap", icon = icon("globe-americas")),
-      menuItem("Density", tabName = "popDen", icon = icon("globe-americas")),
+      menuItem("Map", tabName = "map", icon = icon("globe-americas")),
       menuItem("Charts", tabName = "charts", icon = icon("chart-bar")),
       menuItem("Data Explorer", tabName = "explorer", icon = icon("database")),
       menuItem("SIR", tabName = "sir", icon = icon("chart-line"))
@@ -23,12 +22,10 @@ ui <- dashboardPage(
       # First tab content
       tabItem(tabName = "dashboard",
               fluidRow(
-                box(plotOutput("plot1", height = 250)),
+                valueBoxOutput("count"),
+                valueBoxOutput("users"),
+                valueBoxOutput("days")
                 
-                box(
-                  title = "Controls",
-                  sliderInput("slider", "Number of observations:", 1, 100, 50)
-                )
               )
       ),
       
@@ -88,8 +85,10 @@ ui <- dashboardPage(
               )
       ),
       
-      tabItem(tabName = "popMap",
-              mapPop
+      tabItem(tabName = "map",
+              fluidRow( column(4,actionButton("mapP", "Population"),
+                               actionButton("mapD", "Pop-Density"), 
+              ),hr()), leafletOutput("map")
       )
       
     )
@@ -97,13 +96,18 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
-  set.seed(122)
-  histdata <- rnorm(500)
   
-  output$plot1 <- renderPlot({
-    data <- histdata[seq_len(input$slider)]
-    hist(data)
+  v <- reactiveValues(data = mapPop)
+  
+  observeEvent(input$mapP, {
+    v$data <- mapPop
   })
+  
+  observeEvent(input$mapD, {
+    v$data <- mapDensity
+  })
+  
+  output$map <- renderLeaflet({v$data})
   
   output$mytable = DT::renderDataTable({
     o2
@@ -149,6 +153,42 @@ server <- function(input, output) {
     
     barplot(reData[input$slider2[1]:input$slider2[2],1], main = input$COUNTY,
             names.arg =o2$time[input$slider2[1]:input$slider2[2]], xlab = "Time", ylab = "Infected")
+  })
+  
+  dlCount <- 1
+  
+  # usrCount is a reactive expression that keeps an approximate
+  # count of all of the unique users that have been seen since the
+  # app started.
+  usrCount <- 1
+  
+  # Record the time that the session started.
+  startTime <- as.numeric(Sys.time())
+  
+  
+  output$count <- renderValueBox({
+    valueBox(
+      value = 1,
+      subtitle = "Total downloads",
+      icon = icon("download")
+    )
+  })
+  
+  output$users <- renderValueBox({
+    valueBox(
+      4,
+      "Infected",
+      icon = icon("users"),
+      color = "green"
+    )
+  })
+  
+  output$days <- renderValueBox({
+    valueBox(
+      4,
+      "Days",
+      icon = icon("calendar-alt")
+    )
   })
   
 }
