@@ -84,8 +84,9 @@ ui <- dashboardPage(
       
       # Map
       tabItem(tabName = "map",
-              fluidRow( column(4,actionButton("mapP", "Population"),
-                               actionButton("mapD", "Pop-Density"), 
+              fluidRow( column(12,actionButton("mapP", "Population"),
+                               actionButton("mapD", "Pop-Density"),
+                               actionButton("map", "No-Filter"),
               ),hr()), leafletOutput("map")
       )
       
@@ -99,6 +100,10 @@ server <- function(input, output) {
   
   observeEvent(input$mapP, {
     v$data <- mapPop
+  })
+  
+  observeEvent(input$map, {
+    v$data <- map
   })
   
   observeEvent(input$mapD, {
