@@ -64,7 +64,7 @@ ui <- dashboardPage(
                   #verbatimTextOutput("value"),
                   
                   selectInput("country", "Country", selected = "Ireland",
-                              list(Ireland = "ireland", France = "france", Portugal = "portugal")
+                              list("Ireland", "France", "Portugal", "Spain")
                   ),
                   
                   # selectInput("state", "Population", selected = "Total",
@@ -105,13 +105,14 @@ server <- function(input, output, session) {
   v2 <- reactiveValues()
   
   observeEvent(input$country, {
-    if (input$country == "ireland") {
-      v2$data2 <- irelandSel
-    } else if (input$country == "france") {
-      v2$data2 <- franceSel
-    }
-      else if (input$country == "portugal") {
+    if (input$country == "Ireland") {
+        v2$data2 <- irelandSel
+    } else if (input$country == "France") {
+        v2$data2 <- franceSel
+    } else if (input$country == "Portugal") {
         v2$data2 <- portugalSel
+    } else if (input$country == "Spain") {
+        v2$data2 <- spainSel
     }
   })
   
