@@ -1,21 +1,15 @@
-path = "C:/Users/user/OneDrive/FYP/Data"
-pathUk = "C:/Users/user/OneDrive/FYP/DataUK"
-pathFr = "C:/Users/user/OneDrive/FYP/DataFrance"
+setwd("C:/Users/user/OneDrive/FYP")
 
-file <- dir(path, pattern = ".geojson", full.names = TRUE)
-fileUk <- dir(pathUk, pattern = ".geojson", full.names = TRUE)
-fileFr <- dir(pathFr, pattern = ".geojson", full.names = TRUE)
+counties <- geojsonio::geojson_read("Data/Counties.geojson", what = "sp")
+england <- geojsonio::geojson_read("Data/England.geojson", what = "sp")
+france <- geojsonio::geojson_read("Data/France.geojson", what = "sp")
+portugal <- geojsonio::geojson_read("Data/Portugal.geojson", what = "sp")
 
-
-counties <- geojsonio::geojson_read(file, what = "sp")
-england <- geojsonio::geojson_read(fileUk, what = "sp")
-france <- geojsonio::geojson_read(fileFr, what = "sp")
-
-france$population
-france$name
+portugal$name
+portugal$population
 
 
-binsPopFr <- c(20000, 40000, 80000, 100000, 150000, 180000, 200000,
+binsPop <- c(20000, 40000, 80000, 100000, 150000, 180000, 200000,
              250000, 500000, 1000000, Inf)
 
 binsPopFr <- c(200, 20000, 1000000, 2000000, 3000000, 5000000, 6000000, 7000000, 10000000, Inf)
@@ -42,4 +36,9 @@ labelsDen <- sprintf(
 labelsFr <- sprintf(
   "<strong>%s</strong><br/>%g people",
   france$name, france$population
+) %>% lapply(htmltools::HTML)
+
+labelsInf <- sprintf(
+  "<strong>%s</strong><br/>%g infected",
+  counties$name, as.integer(counties$infected)
 ) %>% lapply(htmltools::HTML)
