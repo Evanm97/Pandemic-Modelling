@@ -7,16 +7,24 @@ library(maps)
 library(htmlwidgets)
 library(geojsonio)
 
+
 # Setting up the client (page elements appear in order specified)
 ui <- fluidPage(
   titlePanel("Pandemic Modeling"),
   br(),br(),
   navbarPage(
     "My Application",
-    tabPanel("Population Density", mapDensity),
+    tabPanel("Population Density", 
+            
+               radioButtons("choice", "",
+                            choices = c(Population = "mapPop", Density = "mapDensity")), mapDensity),
     
-    tabPanel("Population", mapPop),
-    tabPanel("SIR", sidebarLayout(
+    tabPanel("Infected", 
+             sidebarPanel(
+               sliderInput("infectedtime", "Time", min=1, max=160, value=1, step=1)),
+             mainPanel( leafletOutput("infectedmap"))),
+    
+    tabPanel("Dynamic SIR", sidebarLayout(
       sidebarPanel(
         sliderInput("cr", "Contact Rate", min=0, max=10, value=5, step=1),
         sliderInput("inf", "Infectivity", min=0, max=1, value=0.5, step=0.05),
@@ -56,7 +64,9 @@ ui <- fluidPage(
                            max = 161, value = c(1, 25))),
              
              mainPanel(
-               plotOutput("bar",height = 500)))
+               plotOutput("bar",height = 500))),
+    tabPanel("SIR",
+             plotOutput("plot2"))
   ))
 
   
@@ -71,7 +81,10 @@ server <- function(input, output) {
     auxs    <- c(aTotalPopulation=as.numeric(input$state), 
                  aContactRate=as.numeric(input$cr), 
                  aInfectivity=as.numeric(input$inf),
-                 aDelay=as.numeric(input$rd))
+                 aDelay=as.numeric(input$rd),
+                 PPE=as.numeric(0),
+                 PPEDELAY=as.numeric(0),
+                 quarantineF=as.numeric(0))
     
     o<-data.frame(ode(y=stocks, times=simtime, func = model, 
                       parms=auxs, method="euler"))
@@ -97,6 +110,8 @@ server <- function(input, output) {
     o2
   })
   
+  output$leaflet <- renderLeaflet({input$choice})
+  
   output$stats <- renderPrint({
     summary(data()[,c("sSusceptible","sInfected","sRecovered")])
   })
@@ -108,6 +123,83 @@ server <- function(input, output) {
     barplot(reData[input$slider2[1]:input$slider2[2],1], main = input$COUNTY,
             names.arg =o2$time[input$slider2[1]:input$slider2[2]], xlab = "Time", ylab = "Infected")
   })
+  
+  output$plot2 <- renderPlot({
+    cat(file=stderr(), "Function output$plot::renderPlot...\n")
+    
+    o <- data()
+    
+    ggplot()+
+      geom_line(data=o2,size=1,aes(time,o2$InfectedD,color="1. Dublin"))+
+      geom_line(data=o2,size=1,aes(time,o2$InfectedG,color="2. Galway"))+
+      geom_line(data=o2,size=1,aes(time,o2$InfectedL,color="3. Limerick"))+
+      geom_line(data=o2,size=1,aes(time,o2$InfectedC,color="4. Cork"))+
+      geom_line(data=o2,size=1,aes(time,o2$InfectedW,color="5. Waterford"))+
+      geom_line(data=o2,size=1,aes(time,o2$TotalInfected,color="6. Total"))+
+      scale_y_continuous(labels = comma)+
+      ylab("Infected")+
+      xlab("Month") +
+      labs(color="")+
+      theme(legend.position="bottom")
+  })
+  
+  output$infectedmap <- renderLeaflet({
+    
+    c <- data()
+    
+    counties$infected <- as.integer(rep(0, 32))
+    
+    counties$infected[28] <- o2$InfectedD[input$infectedtime]
+    counties$infected[29] <- o2$InfectedL[input$infectedtime]
+    counties$infected[30] <- o2$InfectedW[input$infectedtime]
+    counties$infected[31] <- o2$InfectedG[input$infectedtime]
+    counties$infected[32] <- o2$InfectedC[input$infectedtime]
+    
+    # for (value in counties$infected) {
+    #   print(value)
+    #   counties$infected[28] <- o2$InfectedD[50
+    # }
+    
+    binsInf <- c(100, 1000, 5000, 10000, 25000, 50000, 75000,
+                 100000, 200000, 500000, Inf)
+    
+    palInf <-
+      colorBin("Greens", domain = counties$infected, bins = binsInf)
+    
+    labels <- sprintf(
+      "<strong>%s</strong><br/>%g infected",
+      counties$name, counties$infected
+    ) %>% lapply(htmltools::HTML)
+    
+    leaflet(counties) %>%
+      setView(-7.77832031, 53.2734, 6) %>%
+      addTiles() %>%
+      addPolygons(
+        fillColor = ~ palInf(infected),
+        weight = 2,
+        opacity = 1,
+        color = "white",
+        dashArray = "3",
+        fillOpacity = 0.7,
+        highlight = highlightOptions(
+          weight = 5,
+          color = "#666",
+          dashArray = "",
+          fillOpacity = 0.7,
+          bringToFront = TRUE
+        ),
+        
+        label = labels,
+        labelOptions = labelOptions(
+          style = list("font-weight" = "normal", padding = "3px 8px"),
+          textsize = "15px",
+          direction = "auto"
+        )
+      ) %>%
+      addLegend(pal = palInf,values = ~ infected,opacity = 0.7,title = NULL,
+                position = "bottomright")
+  })
+  
 }
 
 # Launch the app
