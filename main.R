@@ -2,32 +2,36 @@ library(shinydashboard)
 library(shinyBS)
 library(shinyWidgets)
 source("models.R")
+library(DT)
 
 ui <- dashboardPage(
-  
+
   dashboardHeader(title = "Pandemic Dashbaord"),
-  
+
   # Sidebar content
   dashboardSidebar(
     sidebarMenu(
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
       menuItem("Infected Map", tabName = "infectedmap", icon = icon("globe-americas")),
-      menuItem("Charts", tabName = "charts", icon = icon("chart-bar")),
-      menuItem("Data Explorer", tabName = "explorer", icon = icon("database")),
+      menuItem("Data Explorer", icon = icon("database"),
+               menuSubItem("Ireland", tabName = "irelandtable", icon = icon("database")),
+               menuSubItem("France", tabName = "francetable", icon = icon("database")),
+               menuSubItem("Spain", tabName = "spaintable", icon = icon("database")),
+               menuSubItem("Portugal", tabName = "portugaltable", icon = icon("database"))),
+
       menuItem("SIR", icon = icon("chart-line"),
                menuSubItem(
                  "Vectorized SIR", tabName = "sir2", icon = icon("project-diagram")
                ),
                menuSubItem("Dynamic SIR", tabName = "dsir", icon = icon("sliders-h"))
       )
-      
     )
   ),
-  
+
   # Body content
   dashboardBody(
     tabItems(
-      
+
       # Dashboard
       tabItem(tabName = "dashboard",
               tabsetPanel(tabPanel("Ireland", hr(),fluidRow(
@@ -37,7 +41,7 @@ ui <- dashboardPage(
                 column(4,),
                 valueBoxOutput("time_ireland")
               )),
-      
+
       tabPanel("France", hr(),
                fluidRow(
                  valueBoxOutput("sus_france"),
@@ -61,26 +65,19 @@ ui <- dashboardPage(
                   valueBoxOutput("rec_portugal"),
                   column(4,),
                   valueBoxOutput("time_portugal"))))),
-      
+
       # Data Explorer
-      tabItem(tabName = "explorer",
-              DT::dataTableOutput("mytable", width = "100%")
+      tabItem(tabName = "irelandtable",
+              DT::dataTableOutput("tableIreland", width = "100%")
       ),
-
-      # Bar Chart
-      tabItem(tabName = "charts",
-              sidebarPanel(
-
-                radioButtons("COUNTY", "Select the County",
-                             choices = c(Dublin = "InfectedD", Limerick = "InfectedL", Waterford =
-                               "InfectedW", Cork = "InfectedC", "Galway" = "InfectedG"),
-                             selected = "InfectedD"),
-
-                sliderInput("slider2", label = h3("Slider Range"), min = 0,
-                            max = 161, value = c(1, 25))),
-
-              mainPanel(
-                plotOutput("bar", height = 500))
+      tabItem(tabName = "francetable",
+              DT::dataTableOutput("tableFrance", width = "100%")
+      ),
+      tabItem(tabName = "spaintable",
+              DT::dataTableOutput("tableSpain", width = "100%")
+      ),
+      tabItem(tabName = "portugaltable",
+              DT::dataTableOutput("tablePortugal", width = "100%")
       ),
 
       # D-SIR
@@ -113,7 +110,7 @@ ui <- dashboardPage(
                   ),
 
                   uiOutput("secondSelection"),
-                  
+
 
                 ),
                 mainPanel(
@@ -122,20 +119,12 @@ ui <- dashboardPage(
                 )
               )
       ),
-      
-      # Map
-      tabItem(tabName = "map",
-              fluidRow( column(12,actionButton("mapP", "Population"),
-                               actionButton("mapD", "Pop-Density"),
-                               actionButton("map", "No-Filter"),
-              ),hr()), leafletOutput("map")
-      ),
-      
+
       # Matrix SIR
       tabItem(tabName = "sir2", h2("Matrix SIR"),
               tabsetPanel(
                 tabPanel("SIMTIME", hr(),
-                         
+
                          fluidRow(
                            column(3,
                                   h5("Ireland"),
@@ -162,15 +151,14 @@ ui <- dashboardPage(
                                   numericInput("step_spain", "Step", min = 0, value = 0.125)
                            ))),
                 tabPanel("Infection Params", hr(),
-                         
+
                          fluidRow(
                            column(3,
                                   h5("Ireland"),
                                   irelandSel2,
                                   numericInput("infno_ireland", "Initial Infected", min = 1, value = 1),
-                                  sliderInput("rdm_ireland", "Recovery Delay", min = 1, max = 14, value = 2, step = 1),
-                                  textOutput("valueofcounty")
-                                  
+                                  sliderInput("rdm_ireland", "Recovery Delay", min = 1, max = 14, value = 2, step = 1)
+
                            ),
                            column(3,
                                   h5("France"),
@@ -190,9 +178,9 @@ ui <- dashboardPage(
                                   numericInput("infno_spain", "Initial Infected", min = 1, value = 1),
                                   sliderInput("rdm_spain", "Recovery Delay", min = 1, max = 14, value = 2, step = 1)))),
                          hr())),
-      
+
       tabItem(tabName = "infectedmap",
-              
+
               checkboxGroupButtons(
                 inputId = "countryc",
                 choices = c("Ireland", "France", "Portugal", "Spain"),
@@ -201,16 +189,16 @@ ui <- dashboardPage(
               ),
               sliderInput("infectedtime", "Time", min=1, max=160, value=1, step=1, width = "100%", animate = TRUE),
               leafletOutput("infectedmap"))
-      
+
     )
-    
+
   )
 )
 
 server <- function(input, output, session) {
-  
+
   v2 <- reactiveValues()
-  
+
   observeEvent(input$country, {
     if (input$country == "Ireland") {
       v2$data2 <- irelandSel
@@ -222,21 +210,37 @@ server <- function(input, output, session) {
       v2$data2 <- spainSel
     }
   })
-  
+
   output$secondSelection <- renderUI({
     v2$data2
   })
-  
-  output$selection2 <- renderUI({
-    v2$data2
-  })
-  
+
   output$map <- renderLeaflet({v$data})
-  
-  output$mytable = DT::renderDataTable({
-    o2
+
+  output$tableIreland = DT::renderDataTable({
+    o <- dataIreland()
+   colnames(o) <- c("Time", paste(ireland$name, "(S)"), paste(ireland$name, "(I)"), paste(ireland$name, "(R)"))
+   datatable(o, options = list(searching = FALSE,pageLength = 25,lengthMenu = c(25, 50, 100, 150), scrollX = T))
   })
-  
+
+  output$tableFrance = DT::renderDataTable({
+    o <- dataFrance()
+   colnames(o) <- c("Time", paste(france$name, "(S)"), paste(france$name, "(I)"), paste(france$name, "(R)"))
+   datatable(o, options = list(searching = FALSE,pageLength = 25,lengthMenu = c(25, 50, 100, 150), scrollX = T))
+  })
+
+  output$tableSpain = DT::renderDataTable({
+    o <- dataSpain()
+   colnames(o) <- c("Time", paste(spain$name, "(S)"), paste(spain$name, "(I)"), paste(spain$name, "(R)"))
+   datatable(o, options = list(searching = FALSE,pageLength = 25,lengthMenu = c(25, 50, 100, 150), scrollX = T))
+  })
+
+  output$tablePortugal = DT::renderDataTable({
+    o <- dataPortugal()
+   colnames(o) <- c("Time", paste(portugal$name, "(S)"), paste(portugal$name, "(I)"), paste(portugal$name, "(R)"))
+   datatable(o, options = list(searching = FALSE,pageLength = 25,lengthMenu = c(25, 50, 100, 150), scrollX = T))
+  })
+
   data <- reactive({
     cat(file=stderr(), "Function data (reactive function)...\n")
     START <- as.numeric(input$d_s); FINISH <- as.numeric(input$d_f); STEP <- as.numeric(input$d_st)
@@ -250,160 +254,150 @@ server <- function(input, output, session) {
                  PPEDELAY=as.numeric(input$pped),
                  PPEFLAG=as.numeric(input$ppea),
                  quarantineF=as.numeric(input$qf))
-    
+
     data.frame(ode(y=stocks, times=simtime, func = model_d, parms=auxs, method="euler"))
   })
-  
+
   dataIreland <- reactive({
-    
+
     START <- as.numeric(input$start_ireland)
     FINISH <- as.numeric(input$finish_ireland)
     STEP <- as.numeric(input$step_ireland)
-    
+
     simtime <- seq(START, FINISH, by=STEP)
     stocks <- c(countries[[as.numeric(1)]][[2]],c(rep(0, (as.numeric(input$state_ireland))-1), rep(input$infno_ireland, 1), rep(0, (32)-(as.numeric(input$state_ireland)))), rep(0, 32))
     auxs <- c(CE=as.numeric(7),
               countryNo=as.numeric(1),
               NUM_COHORTS=as.numeric(32),
               RECOVERY_DELAY=as.numeric(input$rdm_ireland))
-    
+
     data.frame(ode(y=stocks, times=simtime, func = modelIreland,
                    parms=auxs, method="euler"))
   })
-  ireland$name
-  
+
   dataFrance <- reactive({
-    
+
     START <- as.numeric(input$start_france)
     FINISH <- as.numeric(input$finish_france)
     STEP <- as.numeric(input$step_france)
-    
+
     simtime <- seq(START, FINISH, by=STEP)
     stocks <- c(countries[[as.numeric(2)]][[2]],c(rep(0, (as.numeric(input$state_france))-1), rep(input$infno_france, 1), rep(0, (18)-(as.numeric(input$state_france)))), rep(0, 18))
     auxs <- c(CE=as.numeric(2),
               countryNo=as.numeric(2),
               NUM_COHORTS=as.numeric(18),
               RECOVERY_DELAY=as.numeric(input$rdm_france))
-    
+
     data.frame(ode(y=stocks, times=simtime, func = modelFandP, parms=auxs, method="euler"))
   })
-  
+
   dataSpain <- reactive({
-    
+
     START <- as.numeric(input$start_spain)
     FINISH <- as.numeric(input$finish_spain)
     STEP <- as.numeric(input$step_spain)
-    
+
     simtime <- seq(START, FINISH, by=STEP)
     stocks <- c(countries[[as.numeric(4)]][[2]],c(rep(0, (as.numeric(input$state_spain))-1), rep(input$infno_spain, 1), rep(0, (19)-(as.numeric(input$state_spain)))), rep(0, 19))
     auxs <- c(CE=as.numeric(2),
               countryNo=as.numeric(4),
               NUM_COHORTS=as.numeric(19),
               RECOVERY_DELAY=as.numeric(input$rdm_spain))
-    
+
     data.frame(ode(y=stocks, times=simtime, func = modelSpain, parms=auxs, method="euler"))
   })
-  
-  
+
+
   dataPortugal <- reactive({
-    
+
     START <- as.numeric(input$start_portugal)
     FINISH <- as.numeric(input$finish_portugal)
     STEP <- as.numeric(input$step_portugal)
-    
+
     simtime <- seq(START, FINISH, by=STEP)
     stocks <- c(countries[[as.numeric(3)]][[2]],c(rep(0, (as.numeric(input$state_portugal))-1), rep(input$infno_portugal, 1), rep(0, (18)-(as.numeric(input$state_portugal)))), rep(0, 18))
     auxs <- c(CE=as.numeric(2),
               countryNo=as.numeric(3),
               NUM_COHORTS=as.numeric(18),
               RECOVERY_DELAY=as.numeric(input$rdm_portugal))
-    
+
     data.frame(ode(y=stocks, times=simtime, func = modelFandP,
                    parms=auxs, method="euler"))
   })
-  
-  
-  output$statsV <- renderPrint({
-    summary(dataIreland()[,c("dS_dt", "dI_dt", "dR_dt")])
-  })
-  
-  
+
+  # output$statsV <- renderPrint({
+  #   summary(dataIreland()[,c("dS_dt", "dI_dt", "dR_dt")])
+  # })
+
+
   output$plot <- renderPlot({
     cat(file=stderr(), "Function output$plot::renderPlot...\n")
-    
+
     o <- data()
-    
+
     ggplot()+
       geom_line(data=o,aes(time,o$sSusceptible,color="1. Susceptible"))+
       geom_line(data=o,aes(time,o$sInfected,color="2. Infected"))+
       geom_line(data=o,aes(time,o$sRecovered,color="3. Recovered"))+
       geom_line(data=o,aes(time,o$PPE,color="4. PPE"))+
-      
+
       scale_y_continuous(labels = comma)+
       ylab("System Stocks")+
       xlab("Day") +
       labs(color="")+
       theme(legend.position="bottom")
   })
-  
+
   output$stats <- renderPrint({
     summary(data()[,c("sSusceptible","sInfected","sRecovered", "PPE" )])
   })
-  
-  output$bar <- renderPlot({
-    
-    reData <- subset(o2, select= input$COUNTY)
-    
-    barplot(reData[input$slider2[1]:input$slider2[2],1], main = input$COUNTY,
-            names.arg =o2$time[input$slider2[1]:input$slider2[2]], xlab = "Time", ylab = "Infected")
-  })
-  
+
   output$sus_ireland <- renderValueBox({
     o <- dataIreland()
     o$TOTAL <-o$X2 + o$X3 + o$X4 + o$X5 + o$X6 + o$X7 + o$X8 + o$X9
     + o$X10 + o$X11 + o$X12 + o$X13 + o$X14 + o$X15 + o$X16 + o$X17
     + o$X18 + o$X19 + o$X20 + o$X21 + o$X22 + o$X23 + o$X24 + o$X25 + o$X26
     + o$X27 + o$X28 + o$X29 + o$X30 + o$X31 + o$X32 + o$X33
-    
+
     valueBox(
       value = as.integer(o$TOTAL[input$infectedtime]),
       subtitle = "Suceptible",
       icon = icon("user-alt")
     )
   })
-  
+
   output$sus_france <- renderValueBox({
     o <- dataFrance()
     o$TOTAL <-o$X2 + o$X3 + o$X4 + o$X5 + o$X6 + o$X7 + o$X8 + o$X9
     + o$X10 + o$X11 + o$X12 + o$X13 + o$X14 + o$X15 + o$X16 + o$X17
-    + o$X18 + o$X19 
-    
+    + o$X18 + o$X19
+
     valueBox(
       value = as.integer(o$TOTAL[input$infectedtime]),
       subtitle = "Suceptible",
       icon = icon("user-alt")
     )
   })
-  
+
   output$sus_spain <- renderValueBox({
     o <- dataSpain()
     o$TOTAL <-o$X2 + o$X3 + o$X4 + o$X5 + o$X6 + o$X7 + o$X8 + o$X9
     + o$X10 + o$X11 + o$X12 + o$X13 + o$X14 + o$X15 + o$X16 + o$X17
     + o$X18 + o$X19 + o$X20
-    
+
     valueBox(
       value = as.integer(o$TOTAL[input$infectedtime]),
       subtitle = "Suceptible",
       icon = icon("user-alt")
     )
   })
-  
+
   output$sus_portugal <- renderValueBox({
     o <- dataPortugal()
     o$TOTAL <-o$X2 + o$X3 + o$X4 + o$X5 + o$X6 + o$X7 + o$X8 + o$X9
     + o$X10 + o$X11 + o$X12 + o$X13 + o$X14 + o$X15 + o$X16 + o$X17
     + o$X18 + o$X19
-    
+
     valueBox(
       value = as.integer(o$TOTAL[input$infectedtime]),
       subtitle = "Suceptible",
@@ -417,7 +411,7 @@ server <- function(input, output, session) {
     + o$X42 + o$X43 + o$X44 + o$X45 + o$X46 + o$X47 + o$X48 + o$X49
     + o$X50 + o$X51 + o$X52 + o$X53 + o$X54 + o$X55 + o$X56 + o$X57 + o$X58
     + o$X58 + o$X59 + o$X60 + o$X61 + o$X62 + o$X63 + o$X64
-    
+
     valueBox(
       as.integer(o$TOTAL[input$infectedtime]),
       "Infected",
@@ -425,12 +419,12 @@ server <- function(input, output, session) {
       color = "green"
     )
   })
-  
+
   output$inf_france <- renderValueBox({
     o <- dataFrance()
     o$TOTAL <-  o$X19 + o$X20 + o$X21 + o$X22 + o$X23 + o$X24 + o$X25 + o$X26 + o$X27 + o$X28
     + o$X29 + o$X30 + o$X31 + o$X32 + o$X33 + o$X34 + o$X35 + o$X36
-    
+
     valueBox(
       as.integer(o$TOTAL[input$infectedtime]),
       "Infected",
@@ -438,13 +432,13 @@ server <- function(input, output, session) {
       color = "green"
     )
   })
-  
+
   output$inf_spain <- renderValueBox({
     o <- dataSpain()
     o$TOTAL <- o$X21 + o$X22 + o$X23 + o$X24 + o$X25 + o$X26 + o$X27 + o$X28
     + o$X29 + o$X30 + o$X31 + o$X32 + o$X33 + o$X34 + o$X35 + o$X36
     + o$X37 + o$X38 + o$X39 + o$X40
-    
+
     valueBox(
       as.integer(o$TOTAL[input$infectedtime]),
       "Infected",
@@ -452,7 +446,7 @@ server <- function(input, output, session) {
       color = "green"
     )
   })
-  
+
   output$inf_portugal <- renderValueBox({
     o <- dataPortugal()
     o$TOTAL <-  o$X19 + o$X20 + o$X21 + o$X22 + o$X23 + o$X24 + o$X25 + o$X26 + o$X27 + o$X28
@@ -474,7 +468,7 @@ server <- function(input, output, session) {
       color = "yellow"
     )
   })
-  
+
   output$time_france <- renderValueBox({
     valueBox(
       as.integer(dataFrance()$time[input$infectedtime]),
@@ -483,7 +477,7 @@ server <- function(input, output, session) {
       color = "yellow"
     )
   })
-  
+
   output$time_spain <- renderValueBox({
     valueBox(
       as.integer(dataSpain()$time[input$infectedtime]),
@@ -492,7 +486,7 @@ server <- function(input, output, session) {
       color = "yellow"
     )
   })
-  
+
   output$time_portugal <- renderValueBox({
     valueBox(
       as.integer(dataPortugal()$time[input$infectedtime]),
@@ -516,12 +510,12 @@ server <- function(input, output, session) {
       color = "orange"
     )
   })
-  
+
   output$rec_france <- renderValueBox({
     o <- dataFrance()
-    o$TOTAL <- o$X37 + o$X38 + o$X39 + o$X40 + o$X41 + o$X42 + o$X43 + o$X44 + o$X45 
+    o$TOTAL <- o$X37 + o$X38 + o$X39 + o$X40 + o$X41 + o$X42 + o$X43 + o$X44 + o$X45
     + o$X46 + o$X48 + o$X49 + o$X50 + o$X51 + o$X53 + o$X54 + o$X55 + o$X56
-    
+
     valueBox(
       value = as.integer(as.integer(o$TOTAL[input$infectedtime])),
       "Recovered",
@@ -529,12 +523,12 @@ server <- function(input, output, session) {
       color = "orange"
     )
   })
-  
+
   output$rec_spain <- renderValueBox({
     o <- dataSpain()
-    o$TOTAL <- o$X38 + o$X39 + o$X40 + o$X41 + o$X42 + o$X43 + o$X44 + o$X45 
+    o$TOTAL <- o$X38 + o$X39 + o$X40 + o$X41 + o$X42 + o$X43 + o$X44 + o$X45
     + o$X46 + o$X48 + o$X49 + o$X50 + o$X51 + o$X53 + o$X54 + o$X55 + o$X56 + o$X57 + o$X58
-    
+
     valueBox(
       value = as.integer(as.integer(o$TOTAL[input$infectedtime])),
       "Recovered",
@@ -542,12 +536,12 @@ server <- function(input, output, session) {
       color = "orange"
     )
   })
-  
+
   output$rec_portugal <- renderValueBox({
     o <- dataPortugal()
-    o$TOTAL <- o$X37 + o$X38 + o$X39 + o$X40 + o$X41 + o$X42 + o$X43 + o$X44 + o$X45 
+    o$TOTAL <- o$X37 + o$X38 + o$X39 + o$X40 + o$X41 + o$X42 + o$X43 + o$X44 + o$X45
     + o$X46 + o$X48 + o$X49 + o$X50 + o$X51 + o$X53 + o$X54 + o$X55 + o$X56
-    
+
     valueBox(
       value = as.integer(as.integer(o$TOTAL[input$infectedtime])),
       "Recovered",
@@ -555,28 +549,27 @@ server <- function(input, output, session) {
       color = "orange"
     )
   })
-  
+
   observeEvent(input$p1Button, ({
     updateCollapse(session, "collapseExample", open = "Parameters")
     updateCollapse(session, "collapseExample", open = "Countermeasures")
   }))
-  
+
   output$infectedmap <- renderLeaflet({
-    
+
     leaflet() %>%
       addTiles() %>%
       setView(-7.77832031, 53.2734, 6) %>%
       addEasyButton(easyButton(
         icon="fa-crosshairs", title="Locate Me",
         onClick=JS("function(btn, map){ map.locate({setView: true}); }")))
-    
   })
-  
+
   observe({
     req(input$infectedtime)
-    
+
     if(grepl("Ireland",toString(input$countryc), fixed = TRUE)) {
-      
+
       o <- dataIreland()
       ireland$infected[1] <- o$X33[input$infectedtime]
       ireland$infected[2] <- o$X34[input$infectedtime]
@@ -610,11 +603,11 @@ server <- function(input, output, session) {
       ireland$infected[30] <- o$X62[input$infectedtime]
       ireland$infected[31] <- o$X63[input$infectedtime]
       ireland$infected[32] <- o$X64[input$infectedtime]
-      
+
     }
-    
+
     if(grepl("France",toString(input$countryc), fixed = TRUE)) {
-      
+
       o <- dataFrance()
       france$infected[1] <- o$X19[input$infectedtime]
       france$infected[2] <- o$X20[input$infectedtime]
@@ -634,11 +627,11 @@ server <- function(input, output, session) {
       france$infected[16] <- o$X34[input$infectedtime]
       france$infected[17] <- o$X35[input$infectedtime]
       france$infected[18] <- o$X36[input$infectedtime]
-      
+
     }
-    
+
     if(grepl("Portugal",toString(input$countryc), fixed = TRUE)) {
-      
+
       o <- dataPortugal()
       portugal$infected[1] <- o$X19[input$infectedtime]
       portugal$infected[2] <- o$X20[input$infectedtime]
@@ -658,11 +651,11 @@ server <- function(input, output, session) {
       portugal$infected[16] <- o$X34[input$infectedtime]
       portugal$infected[17] <- o$X35[input$infectedtime]
       portugal$infected[18] <- o$X36[input$infectedtime]
-      
+
     }
-    
+
     if(grepl("Spain",toString(input$countryc), fixed = TRUE)) {
-      
+
       o <- dataSpain()
       spain$infected[1] <- o$X20[input$infectedtime]
       spain$infected[2] <- o$X21[input$infectedtime]
@@ -683,57 +676,59 @@ server <- function(input, output, session) {
       spain$infected[17] <- o$X36[input$infectedtime]
       spain$infected[18] <- o$X36[input$infectedtime]
       spain$infected[19] <- o$X37[input$infectedtime]
-      
+
     }
-    
+
     labels <- sprintf(
       "<strong>%s</strong><br/>%d infected",
       ireland$name, as.integer(ireland$infected)
     ) %>% lapply(htmltools::HTML)
-    
+
     labelsFr <- sprintf(
       "<strong>%s</strong><br/>%d infected",
       france$name, as.integer(france$infected)
     ) %>% lapply(htmltools::HTML)
-    
+
     labelsPor <- sprintf(
       "<strong>%s</strong><br/>%d infected",
       portugal$name, as.integer(portugal$infected)
     ) %>% lapply(htmltools::HTML)
-    
+
     labelsSp <- sprintf(
       "<strong>%s</strong><br/>%d infected",
       spain$name, as.integer(spain$infected)
     ) %>% lapply(htmltools::HTML)
-    
+
     if(grepl("Ireland",toString(input$countryc), fixed = TRUE)) {
       leafletProxy("infectedmap") %>% addPolygons(data = ireland,fillColor = ~ palInfIre(infected),weight = 2,
                                                   opacity = 1, color = "white", dashArray = "3", fillOpacity = 0.7,
                                                   highlight = highlightopts, label = labels, labelOptions = labelopts)
     }
-    
+
     if(grepl("France",toString(input$countryc), fixed = TRUE)) {
       leafletProxy("infectedmap") %>% addPolygons(data = france,fillColor = ~ palInfFr(infected),weight = 2,
                                                   opacity = 1, color = "white", dashArray = "3", fillOpacity = 0.7,
                                                   highlight = highlightopts, label = labelsFr, labelOptions = labelopts)
     }
-    
+
     if(grepl("Portugal",toString(input$countryc), fixed = TRUE)) {
       leafletProxy("infectedmap") %>% addPolygons(data = portugal,fillColor = ~ palInfPor(infected),weight = 2,
                                                   opacity = 1, color = "white", dashArray = "3", fillOpacity = 0.7,
                                                   highlight = highlightopts, label = labelsPor, labelOptions = labelopts)
     }
-    
+
     if(grepl("Spain",toString(input$countryc), fixed = TRUE)) {
       leafletProxy("infectedmap") %>% addPolygons(data = spain,fillColor = ~ palInfSp(infected),weight = 2,
                                                   opacity = 1, color = "white", dashArray = "3", fillOpacity = 0.7,
                                                   highlight = highlightopts, label = labelsSp, labelOptions = labelopts)
     }
-    
+
   })
-  
-  output$valueofcounty <- renderText({input$state_ireland})
-  
+
+  # output$tablem <- renderTable({
+  #   dataIreland()$CE_MATRIX
+  #                                })
+
 }
 
 shinyApp(ui, server)
