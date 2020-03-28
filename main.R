@@ -244,7 +244,7 @@ ui <- dashboardPage(
                                     inputColor = "#428BCA"
                                   )
                            ))),
-                tabPanel("CE MATRIX",
+                tabPanel("CE Matrix",
                          tabsetPanel(tabPanel("Ireland",
                                               matrixInput("ce_ireland",
                                                           class = "numeric",
@@ -265,16 +265,6 @@ ui <- dashboardPage(
                                                             names = TRUE),
                                                           value = ce_func(diag(5, 18, 18), 4, 1))
                                      ),
-                                     tabPanel("Spain",
-                                              matrixInput("ce_spain",
-                                                          class = "numeric",
-                                                          cols = list(
-                                                            names = TRUE
-                                                          ),
-                                                          rows = list(
-                                                            names = TRUE),
-                                                          value = ce_func(diag(5, 19, 19), 4, 1))
-                                     ),
                                      tabPanel("Portugal",
                                               matrixInput("ce_portugal",
                                                           class = "numeric",
@@ -283,15 +273,30 @@ ui <- dashboardPage(
                                                           ),
                                                           rows = list(
                                                             names = TRUE),
-                                                          value = ce_func(diag(5, 18, 18), 4, 1))))
+                                                          value = ce_func(diag(5, 18, 18), 4, 1))
+                                     ),
+                                     tabPanel("Spain",
+                                              matrixInput("ce_spain",
+                                                          class = "numeric",
+                                                          cols = list(
+                                                            names = TRUE
+                                                          ),
+                                                          rows = list(
+                                                            names = TRUE),
+                                                          value = ce_func(diag(5, 19, 19), 4, 1))))
 
                 ),
-      tabPanel("SIR Model",
-             prettyRadioButtons(inputId = "plotchoice",
-                          label = "", thick = TRUE, inline = TRUE,
-                          choices = c("Ireland", "France", "Spain", "Portugal"),
-                          animation = "pulse", status = "info"),
-                                   plotOutput("plotireland")))),
+                tabPanel("SIR Model",
+                         tabsetPanel(tabPanel("Ireland",
+                                              plotOutput("plotireland")
+                         ),
+                                     tabPanel("France", plotOutput("plotfrance")
+                                     ),
+                                     tabPanel("Portugal", plotOutput("plotportugal")
+                                     ),
+                                     tabPanel("Spain", plotOutput("plotspain")
+                                     ))
+                ))),
 
       tabItem(tabName = "infectedmap",
 
@@ -409,7 +414,7 @@ server <- function(input, output, session) {
               CE_F <<- (input$ce_france),
               RECOVERY_DELAY=as.numeric(input$rdm_france))
 
-    data.frame(ode(y=stocks, times=simtime, func = modelFandP, parms=auxs, method="euler"))
+    data.frame(ode(y=stocks, times=simtime, func = modelFrance, parms=auxs, method="euler"))
   })
 
   dataSpain <- reactive({
@@ -448,7 +453,7 @@ server <- function(input, output, session) {
               CE_P <<- (input$ce_portugal),
               RECOVERY_DELAY=as.numeric(input$rdm_portugal))
 
-    data.frame(ode(y=stocks, times=simtime, func = modelFandP,
+    data.frame(ode(y=stocks, times=simtime, func = modelPortugal,
                    parms=auxs, method="euler"))
   })
 
@@ -476,141 +481,137 @@ server <- function(input, output, session) {
   })
 
   output$plotireland <- renderPlot({
+                                     o <- dataIreland()
 
-                                     if (input$plotchoice == "Ireland") {
-                                       o <- dataIreland()
-
-                                       ggplot() +
-                                         geom_line(data = o, aes(time, o$X33, color = paste("1. ", ireland$name[1]))) +
-                                         geom_line(data = o, aes(time, o$X34, color = paste("2. ", ireland$name[2]))) +
-                                         geom_line(data = o, aes(time, o$X35, color = paste("3. ", ireland$name[3]))) +
-                                         geom_line(data = o, aes(time, o$X36, color = paste("4. ", ireland$name[4]))) +
-                                         geom_line(data = o, aes(time, o$X37, color = paste("5. ", ireland$name[5]))) +
-                                         geom_line(data = o, aes(time, o$X38, color = paste("6. ", ireland$name[6]))) +
-                                         geom_line(data = o, aes(time, o$X39, color = paste("7. ", ireland$name[7]))) +
-                                         geom_line(data = o, aes(time, o$X40, color = paste("8. ", ireland$name[8]))) +
-                                         geom_line(data = o, aes(time, o$X41, color = paste("9. ", ireland$name[9]))) +
-                                         geom_line(data = o, aes(time, o$X42, color = paste("10. ", ireland$name[10]))) +
-                                         geom_line(data = o, aes(time, o$X43, color = paste("11. ", ireland$name[11]))) +
-                                         geom_line(data = o, aes(time, o$X44, color = paste("12. ", ireland$name[12]))) +
-                                         geom_line(data = o, aes(time, o$X45, color = paste("13. ", ireland$name[13]))) +
-                                         geom_line(data = o, aes(time, o$X46, color = paste("14. ", ireland$name[14]))) +
-                                         geom_line(data = o, aes(time, o$X47, color = paste("15. ", ireland$name[15]))) +
-                                         geom_line(data = o, aes(time, o$X48, color = paste("16. ", ireland$name[16]))) +
-                                         geom_line(data = o, aes(time, o$X49, color = paste("17. ", ireland$name[17]))) +
-                                         geom_line(data = o, aes(time, o$X50, color = paste("18. ", ireland$name[18]))) +
-                                         geom_line(data = o, aes(time, o$X51, color = paste("19. ", ireland$name[19]))) +
-                                         geom_line(data = o, aes(time, o$X52, color = paste("20. ", ireland$name[20]))) +
-                                         geom_line(data = o, aes(time, o$X53, color = paste("21. ", ireland$name[21]))) +
-                                         geom_line(data = o, aes(time, o$X54, color = paste("22. ", ireland$name[22]))) +
-                                         geom_line(data = o, aes(time, o$X55, color = paste("23. ", ireland$name[23]))) +
-                                         geom_line(data = o, aes(time, o$X56, color = paste("24. ", ireland$name[24]))) +
-                                         geom_line(data = o, aes(time, o$X57, color = paste("25. ", ireland$name[25]))) +
-                                         geom_line(data = o, aes(time, o$X58, color = paste("26. ", ireland$name[26]))) +
-                                         geom_line(data = o, aes(time, o$X59, color = paste("27. ", ireland$name[27]))) +
-                                         geom_line(data = o, aes(time, o$X60, color = paste("28. ", ireland$name[28]))) +
-                                         geom_line(data = o, aes(time, o$X61, color = paste("29. ", ireland$name[29]))) +
-                                         geom_line(data = o, aes(time, o$X62, color = paste("30. ", ireland$name[30]))) +
-                                         geom_line(data = o, aes(time, o$X63, color = paste("31. ", ireland$name[31]))) +
-                                         geom_line(data = o, aes(time, o$X64, color = paste("32. ", ireland$name[32]))) +
-                                         scale_y_continuous(labels = comma) +
-                                         ylab("Infected") +
-                                         xlab("Day") +
-                                         labs(color = "") +
-                                         theme(legend.position = "bottom")
-
-                                     } else if (input$plotchoice == "France") {
-
-                                       o <- dataFrance()
-
-                                       ggplot() +
-                                         geom_line(data = o, aes(time, o$X19, color = paste("1. ", france$name[1]))) +
-                                         geom_line(data = o, aes(time, o$X20, color = paste("2. ", france$name[2]))) +
-                                         geom_line(data = o, aes(time, o$X21, color = paste("3. ", france$name[3]))) +
-                                         geom_line(data = o, aes(time, o$X22, color = paste("4. ", france$name[4]))) +
-                                         geom_line(data = o, aes(time, o$X23, color = paste("5. ", france$name[5]))) +
-                                         geom_line(data = o, aes(time, o$X24, color = paste("6. ", france$name[6]))) +
-                                         geom_line(data = o, aes(time, o$X25, color = paste("7. ", france$name[7]))) +
-                                         geom_line(data = o, aes(time, o$X26, color = paste("8. ", france$name[8]))) +
-                                         geom_line(data = o, aes(time, o$X27, color = paste("9. ", france$name[9]))) +
-                                         geom_line(data = o, aes(time, o$X28, color = paste("10. ", france$name[10]))) +
-                                         geom_line(data = o, aes(time, o$X29, color = paste("11. ", france$name[11]))) +
-                                         geom_line(data = o, aes(time, o$X30, color = paste("12. ", france$name[12]))) +
-                                         geom_line(data = o, aes(time, o$X31, color = paste("13. ", france$name[13]))) +
-                                         geom_line(data = o, aes(time, o$X32, color = paste("14. ", france$name[14]))) +
-                                         geom_line(data = o, aes(time, o$X33, color = paste("15. ", france$name[15]))) +
-                                         geom_line(data = o, aes(time, o$X34, color = paste("16. ", france$name[16]))) +
-                                         geom_line(data = o, aes(time, o$X35, color = paste("17. ", france$name[17]))) +
-                                         geom_line(data = o, aes(time, o$X36, color = paste("18. ", france$name[18]))) +
-                                         scale_y_continuous(labels = comma) +
-                                         ylab("Infected") +
-                                         xlab("Day") +
-                                         labs(color = "") +
-                                         theme(legend.position = "bottom")
-
-                                     } else if (input$plotchoice == "Spain") {
-
-                                       o <- dataSpain()
-
-                                       ggplot() +
-                                         geom_line(data = o, aes(time, o$X20, color = paste("1. ", spain$name[1]))) +
-                                         geom_line(data = o, aes(time, o$X21, color = paste("2. ", spain$name[2]))) +
-                                         geom_line(data = o, aes(time, o$X22, color = paste("3. ", spain$name[3]))) +
-                                         geom_line(data = o, aes(time, o$X23, color = paste("4. ", spain$name[4]))) +
-                                         geom_line(data = o, aes(time, o$X24, color = paste("5. ", spain$name[5]))) +
-                                         geom_line(data = o, aes(time, o$X25, color = paste("6. ", spain$name[6]))) +
-                                         geom_line(data = o, aes(time, o$X26, color = paste("7. ", spain$name[7]))) +
-                                         geom_line(data = o, aes(time, o$X27, color = paste("8. ", spain$name[8]))) +
-                                         geom_line(data = o, aes(time, o$X28, color = paste("9. ", spain$name[9]))) +
-                                         geom_line(data = o, aes(time, o$X29, color = paste("10 ", spain$name[10]))) +
-                                         geom_line(data = o, aes(time, o$X30, color = paste("11 ", spain$name[11]))) +
-                                         geom_line(data = o, aes(time, o$X31, color = paste("12 ", spain$name[12]))) +
-                                         geom_line(data = o, aes(time, o$X32, color = paste("13 ", spain$name[13]))) +
-                                         geom_line(data = o, aes(time, o$X33, color = paste("14 ", spain$name[14]))) +
-                                         geom_line(data = o, aes(time, o$X34, color = paste("15 ", spain$name[15]))) +
-                                         geom_line(data = o, aes(time, o$X35, color = paste("16 ", spain$name[16]))) +
-                                         geom_line(data = o, aes(time, o$X36, color = paste("17 ", spain$name[17]))) +
-                                         geom_line(data = o, aes(time, o$X36, color = paste("18 ", spain$name[18]))) +
-                                         geom_line(data = o, aes(time, o$X37, color = paste("19. ", spain$name[19]))) +
-                                         scale_y_continuous(labels = comma) +
-                                         ylab("Infected") +
-                                         xlab("Day") +
-                                         labs(color = "") +
-                                         theme(legend.position = "bottom")
-
-                                     } else if (input$plotchoice == "Portugal") {
-                                       o <- dataPortugal()
-
-                                       ggplot() +
-                                         geom_line(data = o, aes(time, o$X19, color = paste("1. ", portugal$name[1]))) +
-                                         geom_line(data = o, aes(time, o$X20, color = paste("2. ", portugal$name[2]))) +
-                                         geom_line(data = o, aes(time, o$X21, color = paste("3. ", portugal$name[3]))) +
-                                         geom_line(data = o, aes(time, o$X22, color = paste("4. ", portugal$name[4]))) +
-                                         geom_line(data = o, aes(time, o$X23, color = paste("5. ", portugal$name[5]))) +
-                                         geom_line(data = o, aes(time, o$X24, color = paste("6. ", portugal$name[6]))) +
-                                         geom_line(data = o, aes(time, o$X25, color = paste("7. ", portugal$name[7]))) +
-                                         geom_line(data = o, aes(time, o$X26, color = paste("8. ", portugal$name[8]))) +
-                                         geom_line(data = o, aes(time, o$X27, color = paste("9. ", portugal$name[9]))) +
-                                         geom_line(data = o, aes(time, o$X28, color = paste("10. ", portugal$name[10]))) +
-                                         geom_line(data = o, aes(time, o$X29, color = paste("11 ", portugal$name[11]))) +
-                                         geom_line(data = o, aes(time, o$X30, color = paste("12 ", portugal$name[12]))) +
-                                         geom_line(data = o, aes(time, o$X31, color = paste("13 ", portugal$name[13]))) +
-                                         geom_line(data = o, aes(time, o$X32, color = paste("14 ", portugal$name[14]))) +
-                                         geom_line(data = o, aes(time, o$X33, color = paste("15 ", portugal$name[15]))) +
-                                         geom_line(data = o, aes(time, o$X34, color = paste("16 ", portugal$name[16]))) +
-                                         geom_line(data = o, aes(time, o$X35, color = paste("17 ", portugal$name[17]))) +
-                                         geom_line(data = o, aes(time, o$X36, color = paste("18 ", portugal$name[18]))) +
-                                         scale_y_continuous(labels = comma) +
-                                         ylab("Infected") +
-                                         xlab("Day") +
-                                         labs(color = "") +
-                                         theme(legend.position = "bottom")
-                                     }
+                                     ggplot() +
+                                       geom_line(data = o, aes(time, o$X33, color = paste("1. ", ireland$name[1]))) +
+                                       geom_line(data = o, aes(time, o$X34, color = paste("2. ", ireland$name[2]))) +
+                                       geom_line(data = o, aes(time, o$X35, color = paste("3. ", ireland$name[3]))) +
+                                       geom_line(data = o, aes(time, o$X36, color = paste("4. ", ireland$name[4]))) +
+                                       geom_line(data = o, aes(time, o$X37, color = paste("5. ", ireland$name[5]))) +
+                                       geom_line(data = o, aes(time, o$X38, color = paste("6. ", ireland$name[6]))) +
+                                       geom_line(data = o, aes(time, o$X39, color = paste("7. ", ireland$name[7]))) +
+                                       geom_line(data = o, aes(time, o$X40, color = paste("8. ", ireland$name[8]))) +
+                                       geom_line(data = o, aes(time, o$X41, color = paste("9. ", ireland$name[9]))) +
+                                       geom_line(data = o, aes(time, o$X42, color = paste("10. ", ireland$name[10]))) +
+                                       geom_line(data = o, aes(time, o$X43, color = paste("11. ", ireland$name[11]))) +
+                                       geom_line(data = o, aes(time, o$X44, color = paste("12. ", ireland$name[12]))) +
+                                       geom_line(data = o, aes(time, o$X45, color = paste("13. ", ireland$name[13]))) +
+                                       geom_line(data = o, aes(time, o$X46, color = paste("14. ", ireland$name[14]))) +
+                                       geom_line(data = o, aes(time, o$X47, color = paste("15. ", ireland$name[15]))) +
+                                       geom_line(data = o, aes(time, o$X48, color = paste("16. ", ireland$name[16]))) +
+                                       geom_line(data = o, aes(time, o$X49, color = paste("17. ", ireland$name[17]))) +
+                                       geom_line(data = o, aes(time, o$X50, color = paste("18. ", ireland$name[18]))) +
+                                       geom_line(data = o, aes(time, o$X51, color = paste("19. ", ireland$name[19]))) +
+                                       geom_line(data = o, aes(time, o$X52, color = paste("20. ", ireland$name[20]))) +
+                                       geom_line(data = o, aes(time, o$X53, color = paste("21. ", ireland$name[21]))) +
+                                       geom_line(data = o, aes(time, o$X54, color = paste("22. ", ireland$name[22]))) +
+                                       geom_line(data = o, aes(time, o$X55, color = paste("23. ", ireland$name[23]))) +
+                                       geom_line(data = o, aes(time, o$X56, color = paste("24. ", ireland$name[24]))) +
+                                       geom_line(data = o, aes(time, o$X57, color = paste("25. ", ireland$name[25]))) +
+                                       geom_line(data = o, aes(time, o$X58, color = paste("26. ", ireland$name[26]))) +
+                                       geom_line(data = o, aes(time, o$X59, color = paste("27. ", ireland$name[27]))) +
+                                       geom_line(data = o, aes(time, o$X60, color = paste("28. ", ireland$name[28]))) +
+                                       geom_line(data = o, aes(time, o$X61, color = paste("29. ", ireland$name[29]))) +
+                                       geom_line(data = o, aes(time, o$X62, color = paste("30. ", ireland$name[30]))) +
+                                       geom_line(data = o, aes(time, o$X63, color = paste("31. ", ireland$name[31]))) +
+                                       geom_line(data = o, aes(time, o$X64, color = paste("32. ", ireland$name[32]))) +
+                                       scale_y_continuous(labels = comma) +
+                                       ylab("Infected") +
+                                       xlab("Day") +
+                                       labs(color = "") +
+                                       theme(legend.position = "bottom")
 
                                    })
 
+  output$plotfrance <- renderPlot({
+                                    o <- dataFrance()
+
+                                    ggplot() +
+                                      geom_line(data = o, aes(time, o$X19, color = paste("1. ", france$name[1]))) +
+                                      geom_line(data = o, aes(time, o$X20, color = paste("2. ", france$name[2]))) +
+                                      geom_line(data = o, aes(time, o$X21, color = paste("3. ", france$name[3]))) +
+                                      geom_line(data = o, aes(time, o$X22, color = paste("4. ", france$name[4]))) +
+                                      geom_line(data = o, aes(time, o$X23, color = paste("5. ", france$name[5]))) +
+                                      geom_line(data = o, aes(time, o$X24, color = paste("6. ", france$name[6]))) +
+                                      geom_line(data = o, aes(time, o$X25, color = paste("7. ", france$name[7]))) +
+                                      geom_line(data = o, aes(time, o$X26, color = paste("8. ", france$name[8]))) +
+                                      geom_line(data = o, aes(time, o$X27, color = paste("9. ", france$name[9]))) +
+                                      geom_line(data = o, aes(time, o$X28, color = paste("10. ", france$name[10]))) +
+                                      geom_line(data = o, aes(time, o$X29, color = paste("11. ", france$name[11]))) +
+                                      geom_line(data = o, aes(time, o$X30, color = paste("12. ", france$name[12]))) +
+                                      geom_line(data = o, aes(time, o$X31, color = paste("13. ", france$name[13]))) +
+                                      geom_line(data = o, aes(time, o$X32, color = paste("14. ", france$name[14]))) +
+                                      geom_line(data = o, aes(time, o$X33, color = paste("15. ", france$name[15]))) +
+                                      geom_line(data = o, aes(time, o$X34, color = paste("16. ", france$name[16]))) +
+                                      geom_line(data = o, aes(time, o$X35, color = paste("17. ", france$name[17]))) +
+                                      geom_line(data = o, aes(time, o$X36, color = paste("18. ", france$name[18]))) +
+                                      scale_y_continuous(labels = comma) +
+                                      ylab("Infected") +
+                                      xlab("Day") +
+                                      labs(color = "") +
+                                      theme(legend.position = "bottom")
+                                  })
 
 
+  output$plotspain <- renderPlot({
+                                   o <- dataSpain()
+
+                                   ggplot() +
+                                     geom_line(data = o, aes(time, o$X20, color = paste("1. ", spain$name[1]))) +
+                                     geom_line(data = o, aes(time, o$X21, color = paste("2. ", spain$name[2]))) +
+                                     geom_line(data = o, aes(time, o$X22, color = paste("3. ", spain$name[3]))) +
+                                     geom_line(data = o, aes(time, o$X23, color = paste("4. ", spain$name[4]))) +
+                                     geom_line(data = o, aes(time, o$X24, color = paste("5. ", spain$name[5]))) +
+                                     geom_line(data = o, aes(time, o$X25, color = paste("6. ", spain$name[6]))) +
+                                     geom_line(data = o, aes(time, o$X26, color = paste("7. ", spain$name[7]))) +
+                                     geom_line(data = o, aes(time, o$X27, color = paste("8. ", spain$name[8]))) +
+                                     geom_line(data = o, aes(time, o$X28, color = paste("9. ", spain$name[9]))) +
+                                     geom_line(data = o, aes(time, o$X29, color = paste("10 ", spain$name[10]))) +
+                                     geom_line(data = o, aes(time, o$X30, color = paste("11 ", spain$name[11]))) +
+                                     geom_line(data = o, aes(time, o$X31, color = paste("12 ", spain$name[12]))) +
+                                     geom_line(data = o, aes(time, o$X32, color = paste("13 ", spain$name[13]))) +
+                                     geom_line(data = o, aes(time, o$X33, color = paste("14 ", spain$name[14]))) +
+                                     geom_line(data = o, aes(time, o$X34, color = paste("15 ", spain$name[15]))) +
+                                     geom_line(data = o, aes(time, o$X35, color = paste("16 ", spain$name[16]))) +
+                                     geom_line(data = o, aes(time, o$X36, color = paste("17 ", spain$name[17]))) +
+                                     geom_line(data = o, aes(time, o$X36, color = paste("18 ", spain$name[18]))) +
+                                     geom_line(data = o, aes(time, o$X37, color = paste("19. ", spain$name[19]))) +
+                                     scale_y_continuous(labels = comma) +
+                                     ylab("Infected") +
+                                     xlab("Day") +
+                                     labs(color = "") +
+                                     theme(legend.position = "bottom")
+                                 })
+
+  output$plotportugal <- renderPlot({
+                                      o <- dataPortugal()
+
+                                      ggplot() +
+                                        geom_line(data = o, aes(time, o$X19, color = paste("1. ", portugal$name[1]))) +
+                                        geom_line(data = o, aes(time, o$X20, color = paste("2. ", portugal$name[2]))) +
+                                        geom_line(data = o, aes(time, o$X21, color = paste("3. ", portugal$name[3]))) +
+                                        geom_line(data = o, aes(time, o$X22, color = paste("4. ", portugal$name[4]))) +
+                                        geom_line(data = o, aes(time, o$X23, color = paste("5. ", portugal$name[5]))) +
+                                        geom_line(data = o, aes(time, o$X24, color = paste("6. ", portugal$name[6]))) +
+                                        geom_line(data = o, aes(time, o$X25, color = paste("7. ", portugal$name[7]))) +
+                                        geom_line(data = o, aes(time, o$X26, color = paste("8. ", portugal$name[8]))) +
+                                        geom_line(data = o, aes(time, o$X27, color = paste("9. ", portugal$name[9]))) +
+                                        geom_line(data = o, aes(time, o$X28, color = paste("10. ", portugal$name[10]))) +
+                                        geom_line(data = o, aes(time, o$X29, color = paste("11 ", portugal$name[11]))) +
+                                        geom_line(data = o, aes(time, o$X30, color = paste("12 ", portugal$name[12]))) +
+                                        geom_line(data = o, aes(time, o$X31, color = paste("13 ", portugal$name[13]))) +
+                                        geom_line(data = o, aes(time, o$X32, color = paste("14 ", portugal$name[14]))) +
+                                        geom_line(data = o, aes(time, o$X33, color = paste("15 ", portugal$name[15]))) +
+                                        geom_line(data = o, aes(time, o$X34, color = paste("16 ", portugal$name[16]))) +
+                                        geom_line(data = o, aes(time, o$X35, color = paste("17 ", portugal$name[17]))) +
+                                        geom_line(data = o, aes(time, o$X36, color = paste("18 ", portugal$name[18]))) +
+                                        scale_y_continuous(labels = comma) +
+                                        ylab("Infected") +
+                                        xlab("Day") +
+                                        labs(color = "") +
+                                        theme(legend.position = "bottom")
+                                    })
 
   output$stats <- renderPrint({
     summary(data()[,c("sSusceptible","sInfected","sRecovered", "PPE" )])
@@ -988,12 +989,6 @@ server <- function(input, output, session) {
     }
 
   })
-
-  output$stepvalue <- renderText(input$start_ireland)
-
-  # output$tablem <- renderTable({
-  #   dataIreland()$CE_MATRIX
-  #                                })
 
 }
 
