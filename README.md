@@ -3,9 +3,13 @@
 
 *Instructions*
 
+Run the following scripts in an IDE that supports R
+
 - Run global.r
 - Run models.r
-
 - Run main.r
+
+Or Open
+https://evan-murray.shinyapps.io/fyp_pandemic-modeling/
 
 
