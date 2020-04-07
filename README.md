@@ -3,7 +3,7 @@
 
 *Instructions*
 
-The app can be run by either:
+The app can be run through either:
 
 1. shinyapp : https://evan-murray.shinyapps.io/fyp_pandemic-modeling/
 
