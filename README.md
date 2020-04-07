@@ -3,13 +3,12 @@
 
 *Instructions*
 
-Run the following scripts in an IDE that supports R
+The app can be run by either:
 
-- Run global.r
-- Run models.r
-- Run main.r
+1. shinyapp : https://evan-murray.shinyapps.io/fyp_pandemic-modeling/
 
-Or Open
-https://evan-murray.shinyapps.io/fyp_pandemic-modeling/
+2. running the following scripts in an IDE that supports R
 
-
+- global.r
+- models.r
+- main.r
