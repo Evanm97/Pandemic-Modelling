@@ -2,6 +2,7 @@ library(shinydashboard)
 library(shinyBS)
 library(shinyWidgets)
 source("models.R")
+source('global.R')
 library(DT)
 
 ui <- dashboardPage(
@@ -385,13 +386,11 @@ server <- function(input, output, session) {
 
     simtime <- seq(START, FINISH, by=STEP)
     stocks <- c(countries[[as.numeric(1)]][[2]],c(rep(0, (as.numeric(input$state_ireland))-1), rep(input$infno_ireland, 1), rep(0, (32)-(as.numeric(input$state_ireland)))), rep(0, 32))
-    auxs <- c(CE=as.numeric(3),
-              countryNo=as.numeric(1),
+    auxs <- c(countryNo=as.numeric(1),
               NUM_COHORTS=as.numeric(32),
               QF=as.numeric(input$qf_ireland),
               QV_I <<- as.vector((c(rep(1, input$knob_ireland), rep(0, (32 - input$knob_ireland))))),
               CE_I <<- (input$ce_ireland),
-              PPE_DELAY = 4,
               RECOVERY_DELAY=as.numeric(input$rdm_ireland))
 
     data.frame(ode(y=stocks, times=simtime, func = modelIreland,
@@ -463,7 +462,6 @@ server <- function(input, output, session) {
 
 
   output$plot <- renderPlot({
-    cat(file=stderr(), "Function output$plot::renderPlot...\n")
 
     o <- data()
 
