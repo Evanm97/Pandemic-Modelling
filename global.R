@@ -1,22 +1,14 @@
 library(shiny)
 library(ggplot2)
 library(scales)
-# source("Model.R")
-source("models.R")
 library(shinyMatrix)
 library(leaflet)
 library(maps)
 library(htmlwidgets)
 library(geojsonio)
+library(spData)
 
-library(sf)          # classes and functions for vector data
-library(raster)      # classes and functions for raster data
-
-library(spData)        # load geographic data a
-
-setwd("C:/Users/user/PycharmProjects/FYP_Pandemic-Modeling")
-
-ireland <- geojsonio::geojson_read("Data/Counties.geojson", what = "sp")
+ireland <- geojsonio::geojson_read("Data/Ireland.geojson", what = "sp")
 england <- geojsonio::geojson_read("Data/England.geojson", what = "sp")
 france <- geojsonio::geojson_read("Data/France.geojson", what = "sp")
 portugal <- geojsonio::geojson_read("Data/Portugal.geojson", what = "sp")
@@ -30,10 +22,10 @@ spain$infected <- as.integer(rep(0, 19))
 countries <- c(ireland, france, portugal, spain)
 
 binsInfIre <- c(100, 1000, 5000, 10000, 25000, 50000, 75000,
-             100000, 200000, 500000, Inf)
+                100000, 200000, 500000, Inf)
 
 binsInfFr <- c(100, 1000, 10000, 50000, 100000, 250000, 500000, 750000,
-                1000000, 2000000, 5000000, 6000000, 8000000, 10000000, Inf)
+               1000000, 2000000, 5000000, 6000000, 8000000, 10000000, 15000000, 30000000, Inf)
 
 binsInfPor <- c(100, 1000, 10000, 50000, 100000, 250000, 500000, 750000,
                1000000, 2000000, 5000000, 6000000, 8000000, 10000000, Inf)
@@ -76,7 +68,6 @@ irelandSel <- selectInput("state", "Population", selected = "Total",
                                                "Armagh"=ireland$population[3], "Fermanagh"=ireland$population[6], "Cavan"=ireland$population[24], "Monaghan"=ireland$population[26], "Donegal"=ireland$population[25]))
 )
 
-
 franceSel <- selectInput("state", "Population", selected = "Total",
                          list(Total = list("Total Population" = 50000000),`Region` = list("Île-de-France"=france$population[1], "Centre-Val de Loire"=france$population[2], "Bourgogne-Franche-Comté"=france$population[3],
                                                                                           "Normandie"=france$population[4], "Hauts-de-France"=france$population[5], "Grand Est"=france$population[6], "Pays de la Loire"=france$population[7], "Bretagne"=france$population[8],
@@ -95,7 +86,6 @@ spainSel <- selectInput("state", "Population", selected = "Total",
                                                                                          "Andalucia"=spain$population[9], "Asturias"=spain$population[10], "Valencia"=spain$population[11], "Melilla"=spain$population[12], "Navarra"=spain$population[13],
                                                                                          "Galicia"=spain$population[14], "Aragon"=spain$population[15], "Madrid"=spain$population[16], "Extremadura"=spain$population[17], "Castilla-La Mancha"=spain$population[18], "Pais Vasco"=spain$population[19])))
 
-
 irelandSel2 <- selectInput("state_ireland", "Origin of Infection",
                            list(`Munster` = list("Cork" = 32, "Clare"= 18, "Kerry"= 19, "Tipperary"= 27, "Limerick"= 29, "Waterford"= 30),
                                 `Leinster` = list("Carlow"= 7,"Dublin"= 28, "Kildare"= 8, "Kilkenny"= 9, "Laois"= 10, "Longford"= 11,
@@ -104,7 +94,6 @@ irelandSel2 <- selectInput("state_ireland", "Origin of Infection",
                                 `Ulster` = list("Derry" = 4, "Antrim" = 2, "Down" = 1 , "Tyrone" = 5,
                                                 "Armagh" = 3, "Fermanagh" = 6, "Cavan" = 24, "Monaghan" = 26, "Donegal" = 25 ))
 )
-
 
 franceSel2 <- selectInput("state_france", "Origin of Infection",
                           list(`Region` = list("Île-de-France"=1, "Centre-Val de Loire"=2, "Bourgogne-Franche-Comté"=3,
